@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type FootballData struct {
+type FootballMatch struct {
 	div      string //League Division
 	date     string //Match Date (dd/mm/yy)
 	time     string //Time of match kick off
@@ -20,7 +20,35 @@ type FootballData struct {
 	ftag     string //Full Time Away Team Goals
 }
 
-func FetchFile(url string) {
+func PrintFootballMatches(footballMatches []FootballMatch) {
+	for _, match := range footballMatches {
+		fmt.Printf("%+v\n", match)
+	}
+}
+
+// Slices are passed by reference so this sorts the passed in slice
+func SortAccendingDate(footballMatches []FootballMatch) error {
+	var sortingError error
+	sort.Slice(footballMatches, func(i, j int) bool {
+		iDateTime, err := time.Parse("02/01/2006 15:04", fmt.Sprintf("%s %s", footballMatches[i].date, footballMatches[i].time))
+		if err != nil {
+			sortingError = fmt.Errorf("error parsing date: %v\n", err)
+			fmt.Println(sortingError)
+			return false
+		}
+		jDateTime, err := time.Parse("02/01/2006 15:04", fmt.Sprintf("%s %s", footballMatches[j].date, footballMatches[j].time))
+		if err != nil {
+			sortingError = fmt.Errorf("error parsing date: %v\n", err)
+			fmt.Println(sortingError)
+			return false
+		}
+		return iDateTime.After(jDateTime)
+	})
+
+	return sortingError
+}
+
+func FetchFootballMatches(url string) ([]FootballMatch, error) {
 
 	client := http.Client{
 		Timeout: 5 * time.Second,
@@ -29,7 +57,7 @@ func FetchFile(url string) {
 	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
-		return
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -37,12 +65,13 @@ func FetchFile(url string) {
 	records, err := csvReader.ReadAll()
 	if err != nil {
 		fmt.Printf("error: %v\n", err)
+		return nil, err
 	}
 
-	var allData []FootballData
+	var allData []FootballMatch
 	for _, record := range records[1:] {
 
-		footballData := FootballData{
+		footballData := FootballMatch{
 			div:      record[0],
 			date:     record[1],
 			time:     record[2],
@@ -54,21 +83,7 @@ func FetchFile(url string) {
 		allData = append(allData, footballData)
 	}
 
-	sort.Slice(allData, func(i, j int) bool {
-		iDateTime, err := time.Parse("02/01/2006 15:04", fmt.Sprintf("%s %s", allData[i].date, allData[i].time))
-		if err != nil {
-			fmt.Printf("error parsing date: %v\n", err)
-		}
-		jDateTime, err := time.Parse("02/01/2006 15:04", fmt.Sprintf("%s %s", allData[j].date, allData[j].time))
-		if err != nil {
-			fmt.Printf("error parsing date: %v\n", err)
-		}
-		return iDateTime.After(jDateTime)
-	})
-
-	for _, match := range allData {
-		fmt.Printf("%+v\n", match)
-	}
+	return allData, nil
 }
 
 func main() {
@@ -80,6 +95,17 @@ func main() {
 	}
 
 	fmt.Printf("Fetching match data from %s\n", url)
-	FetchFile(url)
+	matches, err := FetchFootballMatches(url)
+	if err != nil {
+		fmt.Printf("FetchFootballMatches error: %v\n", err)
+		return
+	}
 
+	err = SortAccendingDate(matches)
+	if err != nil {
+		fmt.Printf("SortAccendingDate error: %v\n", err)
+		return
+	}
+
+	PrintFootballMatches(matches)
 }
