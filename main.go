@@ -55,15 +55,15 @@ func FetchFile(url string) {
 	}
 
 	sort.Slice(allData, func(i, j int) bool {
-		iDate, err := time.Parse("02/01/2006", allData[i].date)
+		iDateTime, err := time.Parse("02/01/2006 15:04", fmt.Sprintf("%s %s", allData[i].date, allData[i].time))
 		if err != nil {
 			fmt.Printf("error parsing date: %v\n", err)
 		}
-		jDate, err := time.Parse("02/01/2006", allData[j].date)
+		jDateTime, err := time.Parse("02/01/2006 15:04", fmt.Sprintf("%s %s", allData[j].date, allData[j].time))
 		if err != nil {
 			fmt.Printf("error parsing date: %v\n", err)
 		}
-		return iDate.After(jDate)
+		return iDateTime.After(jDateTime)
 	})
 
 	for _, match := range allData {
