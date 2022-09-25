@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"time"
 )
 
@@ -39,7 +40,7 @@ func FetchFile(url string) {
 	}
 
 	var allData []FootballData
-	for _, record := range records {
+	for _, record := range records[1:] {
 
 		footballData := FootballData{
 			div:      record[0],
@@ -52,6 +53,18 @@ func FetchFile(url string) {
 		}
 		allData = append(allData, footballData)
 	}
+
+	sort.Slice(allData, func(i, j int) bool {
+		iDate, err := time.Parse("02/01/2006", allData[i].date)
+		if err != nil {
+			fmt.Printf("error parsing date: %v\n", err)
+		}
+		jDate, err := time.Parse("02/01/2006", allData[j].date)
+		if err != nil {
+			fmt.Printf("error parsing date: %v\n", err)
+		}
+		return iDate.After(jDate)
+	})
 
 	for _, match := range allData {
 		fmt.Printf("%+v\n", match)
