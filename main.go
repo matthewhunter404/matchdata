@@ -72,10 +72,14 @@ func FetchFile(url string) {
 }
 
 func main() {
-
-	url := os.Args[1]
 	log.Println("Running Program...")
-	log.Println(url)
+	//default value
+	url := "https://www.football-data.co.uk/mmz4281/1920/E0.csv"
+	if len(os.Args) > 1 {
+		url = os.Args[1]
+	}
+
+	fmt.Printf("Fetching match data from %s\n", url)
 	FetchFile(url)
 
 }
